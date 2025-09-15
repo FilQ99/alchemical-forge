@@ -1,47 +1,52 @@
-/* --- UKŁAD GŁÓWNY (FLEXBOX) --- */
+/* --- UKŁAD MOBILNY (DOMYŚLNY) --- */
+/* Te style działają na wszystkich urządzeniach, od telefonów w górę */
 .game-wrapper {
     display: flex;
-    justify-content: center;
+    flex-direction: column; /* Domyślnie kolumny są jedna pod drugiej */
     gap: 20px;
-    padding: 20px;
-    width: 100vw;
-    height: 100vh;
+    padding: 15px;
+    width: 100%;
+    min-height: 100vh; /* Zapewnia, że tło zawsze wypełnia ekran */
 }
 .column {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    /* POPRAWKA BŁĘDU Z UCINANIEM: Kolumny będą teraz miały własne paski przewijania */
-    overflow-y: auto;
-    padding-right: 10px; /* Miejsce na pasek przewijania */
-}
-.column-left, .column-right {
-    flex: 1;
-    max-width: 380px; /* Zwiększamy trochę szerokość */
-}
-.column-main {
-    flex: 2;
-    max-width: 600px;
+    width: 100%;
 }
 
-/* ULEPSZENIE GRAFICZNE: Niestandardowy, klimatyczny pasek przewijania */
-.column::-webkit-scrollbar {
-    width: 8px;
-}
-.column::-webkit-scrollbar-track {
-    background: var(--bg-main);
-    border-radius: 4px;
-}
-.column::-webkit-scrollbar-thumb {
-    background-color: var(--border-color);
-    border-radius: 4px;
-    border: 2px solid var(--bg-main);
-}
-.column::-webkit-scrollbar-thumb:hover {
-    background-color: var(--accent-color);
+/* --- UKŁAD DESKTUPOWY (DLA SZEROKICH EKRANÓW) --- */
+/* Te style aktywują się TYLKO na ekranach szerszych niż 900px */
+@media (min-width: 901px) {
+    body {
+        overflow: hidden; /* Blokujemy scrollowanie całej strony na desktopie */
+    }
+    .game-wrapper {
+        flex-direction: row; /* Wracamy do układu obok siebie */
+        justify-content: center;
+        height: 100vh;
+        padding: 20px;
+    }
+    .column {
+        overflow-y: auto; /* Każda kolumna ma swój własny, wewnętrzny pasek przewijania */
+        padding-right: 10px;
+    }
+    .column-left, .column-right {
+        flex: 1;
+        max-width: 380px;
+    }
+    .column-main {
+        flex: 2;
+        max-width: 600px;
+    }
+    /* Niestandardowy pasek przewijania dla desktopu */
+    .column::-webkit-scrollbar { width: 8px; }
+    .column::-webkit-scrollbar-track { background: var(--bg-main); border-radius: 4px; }
+    .column::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 4px; border: 2px solid var(--bg-main); }
+    .column::-webkit-scrollbar-thumb:hover { background-color: var(--accent-color); }
 }
 
-/* --- PANELE I KARTY --- */
+/* --- PANELE I KARTY (Wspólne dla obu widoków) --- */
 .panel {
     background: radial-gradient(ellipse at center, #3c3836 0%, var(--bg-panel) 80%);
     border: 1px solid var(--border-color);
@@ -49,7 +54,7 @@
     border-radius: 8px;
     padding: 20px;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.4);
-    flex-shrink: 0; /* Zapobiega kurczeniu się paneli */
+    flex-shrink: 0;
 }
 .panel h2 {
     color: var(--text-secondary);
@@ -61,282 +66,58 @@
     margin-bottom: 15px;
 }
 
-/* --- STYLIZACJA ELEMENTÓW --- */
-.game-title {
-    text-align: center;
-    font-family: 'Cinzel', serif;
-    font-size: 48px;
-    color: var(--accent-color);
-    margin-bottom: 20px;
-    /* ULEPSZENIE GRAFICZNE: Subtelny blask */
-    text-shadow: 0 0 5px var(--accent-color), 0 0 15px var(--accent-color), 0 0 25px rgba(142, 192, 124, 0.5);
-}
-.clicker-area {
-    display: flex;
-    justify-content: center;
-}
-#click-button {
-    background: none;
-    border: 3px solid var(--border-color);
-    border-radius: 50%;
-    width: 250px;
-    height: 250px;
-    cursor: pointer;
-    transition: all 0.1s ease-in-out;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    overflow: hidden;
-}
-#click-button:hover {
-    transform: scale(1.05);
-    border-color: var(--accent-color);
-    box-shadow: 0 0 20px var(--accent-color);
-}
-#click-button:active {
-    transform: scale(0.98);
-    /* ULEPSZENIE GRAFICZNE: Efekt wciśnięcia */
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 0 5px var(--accent-color);
-}
-.icon-main-clicker {
-    width: 100px;
-    height: 100px;
-    filter: invert(66%) sepia(11%) saturate(1257%) hue-rotate(107deg) brightness(91%) contrast(87%);
-    transition: filter 0.3s ease;
-    pointer-events: none;
-}
-.clicker-text {
-    margin-top: 10px;
-    font-size: 20px;
-    color: var(--text-secondary);
-    pointer-events: none;
-}
-.upgrade-item, .craft-item, .research-item {
-    display: flex;
-    align-items: center;
-    background-color: rgba(0,0,0,0.2);
-    padding: 15px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 1px solid var(--border-color);
-    margin-bottom: 10px;
-}
-.upgrade-item:hover, .craft-item:hover, .research-item:not(.disabled):hover {
-    transform: scale(1.03);
-    border-color: var(--accent-color);
-    box-shadow: 0 0 10px -2px var(--accent-color);
-}
-.upgrade-item:active, .craft-item:active, .research-item:not(.disabled):active {
-    transform: scale(1.01);
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.4);
-}
-.upgrade-item.disabled, .craft-item.disabled, .research-item.disabled {
-    cursor: not-allowed;
-    background-color: transparent;
-    opacity: var(--disabled-opacity);
-}
-.upgrade-item.disabled:hover, .craft-item.disabled:hover, .research-item.disabled:hover {
-    transform: none;
-    border-color: var(--border-color);
-    box-shadow: none;
-}
-.upgrade-details {
-    flex-grow: 1;
-    text-align: left;
-    margin-left: 15px;
-}
-.upgrade-name {
-    display: block;
-    font-size: 18px;
-}
-.upgrade-cost {
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-.upgrade-owned {
-    font-size: 28px;
-    font-weight: bold;
-    color: var(--accent-color);
-}
-.resource-item {
-    display: flex;
-    align-items: center;
-    font-size: 18px;
-    margin-bottom: 10px;
-}
-.resource-value {
-    margin-left: auto;
-    font-weight: bold;
-    font-size: 20px;
-}
-.icon {
-    width: 28px;
-    height: 28px;
-    filter: invert(66%) sepia(11%) saturate(1257%) hue-rotate(107deg) brightness(91%) contrast(87%);
-}
-.empty-text {
-    color: var(--text-secondary);
-    font-style: italic;
-}
-.craft-item {
-    justify-content: space-between;
-}
-.craft-result {
-    font-size: 16px;
-    font-weight: 600;
-}
-.craft-cost {
-    display: flex;
-    gap: 15px;
-}
-.cost-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-.icon-small {
-    width: 20px;
-    height: 20px;
-    filter: invert(66%) sepia(11%) saturate(1257%) hue-rotate(107deg) brightness(91%) contrast(87%);
-}
-.upgrade-cost span:not(:last-child)::after {
-    content: ' / ';
-    color: var(--text-secondary);
-}
-.tabs {
-    display: flex;
-    margin-bottom: -1px;
-}
-.tabs button {
-    padding: 10px 20px;
-    border: 1px solid var(--border-color);
-    background-color: var(--bg-panel);
-    color: var(--text-secondary);
-    cursor: pointer;
-    border-bottom: 1px solid var(--border-color);
-    border-radius: 6px 6px 0 0;
-    flex-grow: 1; /* Zakładki zajmują całą szerokość */
-    transition: all 0.2s ease;
-}
-.tabs button.active {
-    background-color: #3c3836;
-    color: var(--text-primary);
-    border-bottom: 1px solid #3c3836;
-}
-.research-item {
-    border: 1px solid var(--border-color);
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
-.research-item.researched {
-    background-color: rgba(142, 192, 124, 0.1);
-    border-left: 3px solid var(--accent-hover);
-}
+/* --- RESZTA STYLÓW (Wspólne dla obu widoków) --- */
+.game-title { text-align: center; font-family: 'Cinzel', serif; font-size: 36px; color: var(--accent-color); margin-bottom: 20px; text-shadow: 0 0 5px var(--accent-color), 0 0 15px var(--accent-color), 0 0 25px rgba(142, 192, 124, 0.5); }
+@media (min-width: 901px) { .game-title { font-size: 48px; } }
+
+.clicker-area { display: flex; justify-content: center; }
+#click-button { background: radial-gradient(ellipse at center, var(--accent-color) 0%, transparent 70%); border: 3px solid var(--border-color); border-radius: 50%; width: 200px; height: 200px; cursor: pointer; transition: all 0.1s ease-in-out; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; box-shadow: 0 0 15px var(--accent-color), inset 0 0 10px rgba(0,0,0,0.5); animation: pulse-glow 4s ease-in-out infinite; }
+@media (min-width: 901px) { #click-button { width: 250px; height: 250px; } }
+@keyframes pulse-glow { 0% { box-shadow: 0 0 15px var(--accent-color), inset 0 0 10px rgba(0,0,0,0.5); } 50% { box-shadow: 0 0 35px var(--accent-color), inset 0 0 10px rgba(0,0,0,0.5); } 100% { box-shadow: 0 0 15px var(--accent-color), inset 0 0 10px rgba(0,0,0,0.5); } }
+#click-button:hover { transform: scale(1.05); border-color: var(--accent-color); box-shadow: 0 0 20px var(--accent-color); }
+#click-button:active { transform: scale(0.98); box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 0 5px var(--accent-color); }
+
+.icon-main-clicker { width: 80px; height: 80px; filter: invert(66%) sepia(11%) saturate(1257%) hue-rotate(107deg) brightness(91%) contrast(87%); transition: filter 0.3s ease; pointer-events: none; }
+@media (min-width: 901px) { .icon-main-clicker { width: 100px; height: 100px; } }
+.clicker-text { margin-top: 10px; font-size: 18px; color: var(--text-secondary); pointer-events: none; }
+@media (min-width: 901px) { .clicker-text { font-size: 20px; } }
+
+.upgrade-item, .craft-item, .research-item { display: flex; align-items: center; background-color: rgba(0,0,0,0.2); padding: 15px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-color); margin-bottom: 10px; }
+.upgrade-item:hover, .craft-item:hover, .research-item:not(.disabled):hover { transform: scale(1.03); border-color: var(--accent-color); box-shadow: 0 0 10px -2px var(--accent-color); }
+.upgrade-item:active, .craft-item:active, .research-item:not(.disabled):active { transform: scale(1.01); box-shadow: inset 0 0 10px rgba(0,0,0,0.4); }
+.upgrade-item.disabled, .craft-item.disabled, .research-item.disabled { cursor: not-allowed; background-color: transparent; opacity: var(--disabled-opacity); }
+.upgrade-item.disabled:hover, .craft-item.disabled:hover, .research-item.disabled:hover { transform: none; border-color: var(--border-color); box-shadow: none; }
+
+.upgrade-details { flex-grow: 1; text-align: left; margin-left: 15px; align-self: flex-start; }
+.upgrade-name { display: block; font-size: 18px; }
+.upgrade-cost { font-size: 14px; color: var(--text-secondary); }
+.upgrade-owned { font-size: 28px; font-weight: bold; color: var(--accent-color); }
+.resource-item { display: flex; align-items: center; font-size: 18px; margin-bottom: 10px; }
+.resource-value { margin-left: auto; font-weight: bold; font-size: 20px; }
+.icon { width: 28px; height: 28px; filter: invert(66%) sepia(11%) saturate(1257%) hue-rotate(107deg) brightness(91%) contrast(87%); }
+.empty-text { color: var(--text-secondary); font-style: italic; }
+.craft-item { justify-content: space-between; }
+.craft-result { font-size: 16px; font-weight: 600; }
+.craft-cost { display: flex; gap: 15px; }
+.cost-item { display: flex; align-items: center; gap: 5px; }
+.icon-small { width: 20px; height: 20px; filter: invert(66%) sepia(11%) saturate(1257%) hue-rotate(107deg) brightness(91%) contrast(87%); }
+.cost-line { display: flex; align-items: center; gap: 5px; }
+.icon-tiny { width: 16px; height: 16px; filter: invert(66%) sepia(11%) saturate(1257%) hue-rotate(107deg) brightness(91%) contrast(87%); }
+.tabs { display: flex; margin-bottom: -1px; }
+.tabs button { padding: 10px 20px; border: 1px solid var(--border-color); background-color: var(--bg-panel); color: var(--text-secondary); cursor: pointer; border-bottom: 1px solid var(--border-color); border-radius: 6px 6px 0 0; flex-grow: 1; transition: all 0.2s ease; }
+.tabs button.active { background-color: #3c3836; color: var(--text-primary); border-bottom: 1px solid #3c3836; }
+.research-item { border: 1px solid var(--border-color); padding: 15px; margin-bottom: 10px; border-radius: 6px; transition: all 0.2s ease; }
+.research-item.researched { background-color: rgba(142, 192, 124, 0.1); border-left: 3px solid var(--accent-hover); }
 .research-name { font-weight: bold; display: block; }
 .research-desc { font-size: 14px; color: var(--text-secondary); }
 .research-cost { display: flex; margin-top: 10px; }
 .prestige-panel { border: 2px solid var(--accent-hover); box-shadow: 0 0 20px var(--accent-hover); }
+.buy-multiplier-panel { display: flex; gap: 5px; margin-bottom: 15px; }
+.buy-multiplier-panel button { flex-grow: 1; padding: 8px; background-color: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer; border-radius: 4px; transition: all 0.2s ease; }
+.buy-multiplier-panel button:hover { border-color: var(--accent-color); color: var(--text-primary); }
+.buy-multiplier-panel button.active { background-color: var(--accent-color); color: var(--bg-main); font-weight: bold; }
+.craft-item[data-id="philosophersStone"] { border-color: #ffd700; background: linear-gradient(45deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.2)); animation: legendary-shine 5s ease-in-out infinite; }
+.craft-item[data-id="philosophersStone"]:hover { box-shadow: 0 0 15px #ffd700; }
+@keyframes legendary-shine { 0% { border-color: #ffd700; } 50% { border-color: #ff8c00; } 100% { border-color: #ffd700; } }
 
-/* --- RWD --- */
-@media (max-width: 900px) {
-    .game-wrapper {
-        flex-direction: column;
-        height: auto;
-        padding: 10px;
-        overflow-y: auto;
-    }
-    .column-left, .column-main, .column-right {
-        max-width: 100%;
-        overflow-y: visible; /* Na mobilnych nie potrzebujemy wewnętrznego scrolla */
-    }
-    .game-title {
-        font-size: 36px;
-    }
-    body {
-        overflow: auto;
-    }
-}
-
-/* --- NOWE STYLE DLA AKTUALIZACJI --- */
-
-/* Lepszy Clicker */
-#click-button {
-    background: radial-gradient(ellipse at center, var(--accent-color) 0%, transparent 70%);
-    box-shadow: 0 0 15px var(--accent-color), inset 0 0 10px rgba(0,0,0,0.5);
-    animation: pulse-glow 4s ease-in-out infinite;
-}
-@keyframes pulse-glow {
-    0% { box-shadow: 0 0 15px var(--accent-color), inset 0 0 10px rgba(0,0,0,0.5); }
-    50% { box-shadow: 0 0 35px var(--accent-color), inset 0 0 10px rgba(0,0,0,0.5); }
-    100% { box-shadow: 0 0 15px var(--accent-color), inset 0 0 10px rgba(0,0,0,0.5); }
-}
-
-/* Mnożnik Zakupów */
-.buy-multiplier-panel {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 15px;
-}
-.buy-multiplier-panel button {
-    flex-grow: 1;
-    padding: 8px;
-    background-color: rgba(0,0,0,0.2);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-.buy-multiplier-panel button:hover {
-    border-color: var(--accent-color);
-    color: var(--text-primary);
-}
-.buy-multiplier-panel button.active {
-    background-color: var(--accent-color);
-    color: var(--bg-main);
-    font-weight: bold;
-}
-
-/* Lepszy Opis Kosztu Generatorów */
-.upgrade-details {
-    align-self: flex-start; /* Wyrównuje do góry */
-}
-.cost-line {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-.icon-tiny {
-    width: 16px;
-    height: 16px;
-    filter: invert(66%) sepia(11%) saturate(1257%) hue-rotate(107deg) brightness(91%) contrast(87%);
-}
-
-/* Legendarny Wygląd dla Kamienia Filozoficznego */
-.craft-item[data-id="philosophersStone"] {
-    border-color: #ffd700;
-    background: linear-gradient(45deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.2));
-    animation: legendary-shine 5s ease-in-out infinite;
-}
-.craft-item[data-id="philosophersStone"]:hover {
-    box-shadow: 0 0 15px #ffd700;
-}
-@keyframes legendary-shine {
-    0% { border-color: #ffd700; }
-    50% { border-color: #ff8c00; }
-    100% { border-color: #ffd700; }
-}
-
-/* Styl dla ekranu ładowania */
-.loading-screen {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100vw;
-    height: 100vh;
-}
+.loading-screen { display: flex; justify-content: center; align-items: center; width: 100vw; height: 100vh; }
