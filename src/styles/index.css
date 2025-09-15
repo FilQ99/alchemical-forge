@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Source+Sans+Pro:wght@400;600&display=swap');
+
+:root {
+  --bg-main: #1d2021;
+  --bg-panel: #282828;
+  --border-color: #504945;
+  --text-primary: #ebdbb2;
+  --text-secondary: #a89984;
+  --accent-color: #83a598;
+  --accent-hover: #8ec07c;
+  --disabled-opacity: 0.4;
+}
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-primary);
+  overflow: hidden;
+  
+  /* ULEPSZENIE GRAFICZNE: Subtelne, animowane tło */
+  background: linear-gradient(-45deg, #1d2021, #282828, #3c3836, #504945);
+  background-size: 400% 400%;
+  animation: gradient-pan 25s ease infinite;
+}
+
+@keyframes gradient-pan {
+	0% { background-position: 0% 50%; }
+	50% { background-position: 100% 50%; }
+	100% { background-position: 0% 50%; }
+}
