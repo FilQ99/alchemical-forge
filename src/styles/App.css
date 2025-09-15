@@ -18,8 +18,9 @@
 /* --- UKŁAD DESKTUPOWY (DLA SZEROKICH EKRANÓW) --- */
 /* Te style aktywują się TYLKO na ekranach szerszych niż 900px */
 @media (min-width: 901px) {
+    /* Blokujemy scrollowanie całej strony TYLKO na desktopie */
     body {
-        overflow: hidden; /* Blokujemy scrollowanie całej strony na desktopie */
+        overflow: hidden;
     }
     .game-wrapper {
         flex-direction: row; /* Wracamy do układu obok siebie */
@@ -66,7 +67,7 @@
     margin-bottom: 15px;
 }
 
-/* --- RESZTA STYLÓW (Wspólne dla obu widoków) --- */
+/* --- RESZTA STYLÓW --- */
 .game-title { text-align: center; font-family: 'Cinzel', serif; font-size: 36px; color: var(--accent-color); margin-bottom: 20px; text-shadow: 0 0 5px var(--accent-color), 0 0 15px var(--accent-color), 0 0 25px rgba(142, 192, 124, 0.5); }
 @media (min-width: 901px) { .game-title { font-size: 48px; } }
 

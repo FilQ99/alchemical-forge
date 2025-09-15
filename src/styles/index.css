@@ -10,17 +10,23 @@
   --accent-hover: #8ec07c;
   --disabled-opacity: 0.4;
 }
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
+
+/* KLUCZOWA POPRAWKA: Upewniamy się, że strona może się przewijać domyślnie */
+html, body {
+  width: 100%;
+  overflow-x: hidden; /* Zapobiega przewijaniu na boki */
+}
+
 body {
   font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--text-primary);
-  overflow: hidden;
   
-  /* ULEPSZENIE GRAFICZNE: Subtelne, animowane tło */
   background: linear-gradient(-45deg, #1d2021, #282828, #3c3836, #504945);
   background-size: 400% 400%;
   animation: gradient-pan 25s ease infinite;
