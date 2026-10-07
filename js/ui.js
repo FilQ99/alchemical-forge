@@ -94,7 +94,7 @@ function kindName(){
 function renderTarget(){
   if(!E)return;
   const t=$('target');
-  t.classList.toggle('mini',E.type==='mini');
+  t.classList.toggle('isminiboss',E.type==='mini');
   const k=kindName();
   let nm=E.def.n;
   if(E.type==='dung'){const st=MAP1.dungeon.stages[E.stage];nm=E.def.n+(st.kind==='horde'?' ('+E.left+'/'+st.count+')':'');}
