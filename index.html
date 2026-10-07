@@ -1,13 +1,43 @@
 <!doctype html>
-<html lang="pl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Alchemiczna Kuźnia</title>
-    <script type="module" crossorigin src="/alchemical-forge/assets/index-BhFalca4.js"></script>
-    <link rel="stylesheet" crossorigin href="/alchemical-forge/assets/index-GF70w68n.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
-</html>
+<html lang="pl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f0b08">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Kamień Cienia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"></head>
+<body>
+<div id="app" data-tab="walka">
+ <header class="hud">
+  <div class="who"><div class="emblem" id="emblem"></div><div style="min-width:0"><b id="pname"></b><small id="pinfo"></small></div></div>
+  <div class="lvl"><div class="row"><span>Poziom <b id="lv"></b></span><span id="xpt" class="num"></span></div><div class="bar xp"><i id="xpbar"></i></div></div>
+  <div style="display:flex;gap:8px;align-items:center"><div class="coin" id="coin"><svg viewBox="0 0 24 24"><polygon points="12,2 20,9 16,22 8,22 4,9" fill="#a07ad8" stroke="#140d08" stroke-width="1.6"/><polygon points="12,2 16,22 8,22" fill="#c9a9f0" opacity=".5"/></svg><span id="szardy" class="num"></span></div><button class="iconbtn" id="devbtn" aria-label="Narzędzia testowe">⚙</button></div>
+ </header>
+ <main class="game">
+  <section class="stage">
+   <div class="scene" id="scene" tabindex="0" aria-label="Pole walki — kliknij, aby atakować">
+    <div class="world" id="world">
+     <img class="bg" id="bg" alt="">
+     <div class="hero" id="hero"><div class="in"><img class="body" id="heroimg" alt=""><img class="sword" id="sword" alt=""></div><div class="shadow"></div></div>
+     <div class="enemy" id="enemy"><div class="in" id="enemyin"></div><div class="shadow"></div></div>
+    </div>
+    <div class="topbar"><div class="buffs" id="buffs"></div><div class="mapname"><span id="mapname">Wrzosowe Pogranicze</span><small>Mapa 1</small></div></div>
+    <div class="target" id="target"><div class="nm"></div><div class="bar"><i id="hpbar"></i></div><div class="hpt num" id="hpt"></div><div class="tm" id="tm"></div></div>
+    <div class="combo" id="combo"></div>
+    <div class="skills" id="skills"></div>
+   </div>
+  </section>
+  <section class="panel"><button class="mini" id="mini" data-act="nav" data-id="walka"><span class="mn" id="mininame"></span><span class="mb"><i id="minihp"></i></span><span class="mg">Do walki ▸</span></button><div class="tabs" id="tabs"></div><div class="content" id="content"></div></section>
+ </main>
+ <nav class="bottomnav" id="nav"></nav>
+</div>
+<div class="veil" id="veil"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+<div class="dev" id="dev"></div>
+<script src="js/data.js"></script>
+<script src="js/art.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+<script>document.addEventListener('DOMContentLoaded',init);</script>
+</body></html>
