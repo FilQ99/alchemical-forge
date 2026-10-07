@@ -1,12 +1,19 @@
-# React + Vite
+# Kamień Cienia
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Clicker w klimacie Metin2, własne grafiki i zasady. Czysty HTML/CSS/JS, bez budowania.
 
-Currently, two official plugins are available:
+## Struktura
+- `public/index.html` – szkielet strony
+- `public/style.css` – cały wygląd
+- `public/js/data.js` – dane gry (mapy, wrogowie, bonusy, sety, ceny, szanse dropu)
+- `public/js/art.js` – lista grafik (`ASSETS`) i placeholdery SVG
+- `public/js/engine.js` – zasady gry
+- `public/js/ui.js` – interfejs, nawigacja, animacje
+- `public/assets/` – grafiki WebP
+- `DESIGN.md` – ustalenia projektowe, `PROMPTY-GRAFIK.md` – prompty do ChatGPT
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Uruchomienie lokalnie
+`cd public && python3 -m http.server 8000` i otwórz http://localhost:8000
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Wdrożenie (Cloudflare Pages)
+Build command: puste. Build output directory: `public`. Każdy push do `main` wdraża się sam.
