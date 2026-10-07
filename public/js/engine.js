@@ -25,7 +25,7 @@ function newState(){
     items:{},inv:[],eq:{},nid:1,
     comp:{lvl:1,xp:0,share:25},
     kills:0,cd:{},monoReady:0,bossReady:{b1:0,b2:0,b3:0},buffEnd:{},
-    actSel:'hunt',unlockCap:false,mute:true};
+    auto:{},actSel:'hunt',unlockCap:false,mute:true};
 }
 let S=newState();
 let E=null;                // aktualne starcie
@@ -298,8 +298,21 @@ function tickEnc(dt){
     }
   }
 }
+function autoPrice(i){return CFG.autoSkillPrice[i]||CFG.autoSkillPrice[CFG.autoSkillPrice.length-1];}
+function buyAuto(id){
+  const list=skillList(),i=list.findIndex(s=>s.id===id);if(i<0||S.auto[id])return false;
+  const p=autoPrice(i);if(S.szardy<p){hook('toast','Za mało Szardów.');return false;}
+  S.szardy-=p;S.auto[id]=1;save();return true;
+}
+function toggleAuto(id){if(S.auto[id])S.auto[id]=S.auto[id]===1?2:1;save();}
+function tickAuto(){
+  if(!E||(E.spawnAt&&Date.now()<E.spawnAt))return;
+  const list=skillList();
+  for(let i=0;i<list.length;i++){const sk=list[i];if(S.auto[sk.id]===1&&skUnlocked(sk)&&skReadyIn(sk)<=0)useSkill(i);}
+}
 function tick(dt){
   tickEnc(dt);
+  tickAuto();
   if(!E)return;
   const idle=performance.now()-lastClick>CFG.autoIdleMs;
   if(idle){

@@ -24,7 +24,7 @@ const CFG={
   atkUp:0.1,                 // +10% ataku broni na każdy +N
   lvBase:4,lvStep:1.5,       // podstawa obrażeń z poziomu
   xpBase:400,xpGrow:1.8, // wolniejszy EXP (do testów)
-  spawnDelay:.35, // krótka przerwa po pojawieniu się wroga, sek.
+  spawnDelay:.35,autoSkillPrice:[1500,6000,20000], // krótka przerwa po pojawieniu się wroga, sek.
   
   autoIdleMs:900,            // po tylu ms bez kliknięcia broń atakuje sama
   tierMinLevel:[1,9,17,26,35,43],

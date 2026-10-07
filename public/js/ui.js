@@ -64,6 +64,8 @@ function sizeEnemy(){
 window.addEventListener('resize',()=>sizeEnemy());
 function renderEnemy(){
   if(!E)return;
+  if(U.deathAnim){try{U.deathAnim.cancel();}catch(_){}U.deathAnim=null;}
+  $('enemyin').getAnimations().forEach(a=>{if(!(window.CSSAnimation&&a instanceof CSSAnimation))try{a.cancel();}catch(_){}});
   const d=E.def,el=$('enemy');
   const wantBg=E.type==='dung'?ASSETS.bgDung:ASSETS.bg,bgEl=$('bg');
   if(bgEl.dataset.src!==(E.type==='dung'?'d':'m')){bgEl.dataset.src=E.type==='dung'?'d':'m';bgEl.src=wantBg;}
@@ -184,6 +186,7 @@ UI.spawn=function(){renderEnemy();renderTarget();U.dirty=true;};
 UI.kill=function(def,sz,drops){
   if(!RM)$('xpbar').animate([{filter:'brightness(2.4)'},{filter:'brightness(1)'}],{duration:450});
   vib(drops&&drops.length?[10,40,10]:8);
+  {const m=U.sum;m.sz+=sz;m.k++;const b=m.by[def.n]||(m.by[def.n]={n:0,sz:0});b.n++;b.sz+=sz;(drops||[]).forEach(x=>{m.mat[x.k]=(m.mat[x.k]||0)+x.n;});}
   U.log.unshift({n:def.n,sz:sz,d:(drops||[]).map(x=>({k:x.k,n:x.n}))});if(U.log.length>8)U.log.pop();
   const en=$('enemy').getBoundingClientRect(),co=$('coin').getBoundingClientRect();
   if(!RM){
@@ -196,7 +199,7 @@ UI.kill=function(def,sz,drops){
       c.animate([{transform:'translate(0,0) scale(.7)',opacity:1},{transform:'translate('+dx+'px,'+dy+'px) scale(1)',opacity:1,offset:.35},{transform:'translate('+tx+'px,'+ty+'px) scale(.6)',opacity:.9}],{duration:700+i*40,easing:'cubic-bezier(.3,.1,.5,1)'}).onfinish=()=>{c.remove();if(i===0){const cc=$('coin');cc.classList.remove('pulse');void cc.offsetWidth;cc.classList.add('pulse');}};
     }
     if(def&&def.id!==undefined){
-      $('enemyin').animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.85) translateY(6%)'}],{duration:180,fill:'forwards'});
+      U.deathAnim=$('enemyin').animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.85) translateY(6%)'}],{duration:180,fill:'forwards'});
     }
   }
   floater('+'+fmt(sz),'sz','#f5d58c',16);
@@ -260,7 +263,7 @@ function renderSkillsBar(){
     const sk=list[i];
     if(!sk){const L=Object.values(SKROLE)[i]?Object.values(SKROLE)[i].lvl:'';h+='<button class="sk lock" data-act="sklock" data-i="'+i+'" aria-label="Umiejętność zablokowana"><span class="gl">🔒</span><span class="k">'+(i+1)+'</span><span class="lv">'+(L?'lv '+L:'')+'</span></button>';continue;}
     const un=skUnlocked(sk);
-    h+='<button class="sk '+(un?'':'lock')+'" data-act="'+(un?'skill':'sklock')+'" data-i="'+i+'" id="sk'+i+'" aria-label="'+esc(sk.name)+(un?'':' (poziom '+sk.lvl+')')+'"><span class="gl">'+skGlyph(sk,un)+'</span><span class="k">'+(i+1)+'</span><span class="cd"></span><span class="t"></span>'+(un?'':'<span class="lv">lv '+sk.lvl+'</span>')+'</button>';
+    h+='<button class="sk '+(un?'':'lock')+(un&&S.auto[sk.id]===1?' auto':'')+'" data-act="'+(un?'skill':'sklock')+'" data-i="'+i+'" id="sk'+i+'" aria-label="'+esc(sk.name)+(un?'':' (poziom '+sk.lvl+')')+'"><span class="gl">'+skGlyph(sk,un)+'</span><span class="k">'+(i+1)+'</span><span class="cd"></span><span class="t"></span>'+(un?'':'<span class="lv">lv '+sk.lvl+'</span>')+'</button>';
   }
   $('skills').innerHTML=h;
 }
@@ -383,10 +386,24 @@ function panelWalka(){
   });
   h+='</div></div>';
   h+='<div class="sec"><div class="card"><div class="stat"><span>Cios (klik)</span><b class="num">'+fmt(clickDmg())+'</b></div><div class="stat"><span>Cios samoczynny</span><b class="num">'+fmt(autoDmg())+' co '+cm(r1(autoInterval()))+' s</b></div><div class="stat"><span>Do mini-bossa</span><b class="num">'+(S.kills%CFG.minibossEvery)+' / '+CFG.minibossEvery+'</b></div></div></div>';
-  h+='<div class="sec"><h3>Ostatnie łupy</h3>';
-  if(!U.log.length)h+='<div class="card muted">Tu pojawią się Szardy i materiały z pokonanych wrogów.</div>';
-  else h+='<div class="card log">'+U.log.map(l=>'<div class="lg"><span>'+esc(l.n)+'</span><b class="num">+'+fmt(l.sz)+' '+COIN.replace('<svg','<svg class="mi"')+'</b>'+(l.d.length?'<div class="ld">'+l.d.map(d=>matIcon(d.k,'mi')+'<span>×'+d.n+'</span>').join('')+'</div>':'')+'</div>').join('')+'</div>';
-  return h+'</div>';
+  h+=lootHtml();
+  return h;
+}
+function lootHtml(){
+  const m=U.sum,coin=COIN.replace('<svg','<svg class="mi"');
+  const mats=Object.keys(m.mat).filter(k=>m.mat[k]>0);
+  const mins=Math.max(1,Math.round((Date.now()-m.t)/60000));
+  let h='<div class="sec"><div class="card loot"><button class="lhead" data-act="lootT"><span><b>Łup z tej tury</b><small>'+m.k+' pokonanych · '+mins+' min</small></span><span class="lsum"><b class="num">+'+fmt(m.sz)+'</b> '+coin+'<i class="chev '+(U.sumOpen?'o':'')+'">▾</i></span></button>';
+  if(mats.length)h+='<div class="lmats">'+mats.map(k=>matIcon(k,'mi')+'<span>×'+m.mat[k]+'</span>').join('')+'</div>';
+  else h+='<div class="lmats muted">Materiały pojawią się tutaj.</div>';
+  if(U.sumOpen){
+    h+='<div class="lbody">';
+    const names=Object.keys(m.by);
+    if(names.length)h+=names.map(n=>'<div class="lg"><span>'+esc(n)+' ×'+m.by[n].n+'</span><b class="num">+'+fmt(m.by[n].sz)+' '+coin+'</b></div>').join('');
+    if(mats.length)h+='<div class="lg"><span>Materiały</span><span class="lmx">'+mats.map(k=>esc(MATS[k]?MATS[k].n:k)+' ×'+m.mat[k]).join(', ')+'</span></div>';
+    h+='<button class="btn ghost" data-act="lootReset" style="margin-top:8px">Zacznij nową turę</button></div>';
+  }
+  return h+'</div></div>';
 }
 function panelMapa(){
   let h='<div class="sec"><h3>Teleportacja</h3><div class="maps">';
@@ -431,6 +448,11 @@ function panelKowal(){
   });
   return h+'</div></div>';
 }
+function autoHtml(sk,i){
+  const st=S.auto[sk.id],p=autoPrice(i);
+  if(!st)return '<button class="btn autob" data-act="autobuy" data-id="'+sk.id+'" '+(S.szardy>=p?'':'disabled')+'>Kup autouzywanie · '+fmt(p)+' '+COIN.replace('<svg','<svg class="mi"')+'</button>';
+  return '<button class="btn autob '+(st===1?'on':'')+'" data-act="autotog" data-id="'+sk.id+'">Auto: '+(st===1?'WŁ.':'WYŁ.')+'</button>';
+}
 function panelSkills(){
   const c=CLASSES[S.cls];let h='';
   if(!S.path){
@@ -446,7 +468,7 @@ function panelSkills(){
       const R=SKROLE[sk.role],un=skUnlocked(sk),rk=skRank(sk.id);
       let pips='';for(let p=1;p<=10;p++)pips+='<i class="'+(p<=rk?'f':'')+'"></i>';
       const eff=sk.role==='wzmocnienie'?'+'+Math.round(R.buff*(1+(rk-1)*0.1))+'% Mocy przez '+R.dur+' s':'×'+cm(r1(R.mult*(1+(rk-1)*0.15)))+' obrażeń';
-      h+='<div class="sklrow '+(un?'':'lock')+'"><div class="gl">'+skGlyph(sk,un)+'</div><div><b>'+esc(sk.name)+'</b><small>'+R.desc+' · '+eff+' · odnowienie '+Math.round(skCd(sk))+' s</small>'+(un?'<div class="rank">'+pips+'</div>':'<small>Odblokowanie: poziom '+sk.lvl+'</small>')+'</div>'+
+      h+='<div class="sklrow '+(un?'':'lock')+'"><div class="gl">'+skGlyph(sk,un)+'</div><div><b>'+esc(sk.name)+'</b><small>'+R.desc+' · '+eff+' · odnowienie '+Math.round(skCd(sk))+' s</small>'+(un?'<div class="rank">'+pips+'</div>'+autoHtml(sk,i):'<small>Odblokowanie: poziom '+sk.lvl+'</small>')+'</div>'+
         (un?'<button class="btn" data-act="rank" data-id="'+sk.id+'" '+(S.pts<1||rk>=5?'disabled':'')+'>+1</button>':'')+'</div>';
     });
     h+='<p class="hint">Rangi 1–5 kosztują punkty umiejętności. Rangi 6–10 wymagają Księgi umiejętności (dodamy z kolejnymi mapami). Skróty: klawisze 1, 2, 3.</p></div>';
@@ -479,7 +501,7 @@ function renderContent(){
 }
 
 /* ---------- okno przedmiotu ---------- */
-U.sheetTab='bon';U.goal='exp';
+U.sheetTab='bon';U.goal='exp';U.sum={sz:0,k:0,by:{},mat:{},t:Date.now()};U.sumOpen=false;
 function pips(b){let s='';for(let i=0;i<5;i++)s+='<i class="'+(i<=b?'on':'')+'"></i>';return '<span class="pips5 q'+b+'" title="Jakość: '+(b+1)+' / 5">'+s+'</span>';}
 function isReco(k,master){const g=GOALS[U.goal];return master?g.m.includes(k):g.top.slice(0,4).includes(k);}
 function sheetHtml(it){
@@ -571,12 +593,17 @@ function rollAnim(id,master){
   const grp=document.querySelector('#sheet [data-grp="'+(master?'m':'n')+'"]');
   const rows=grp?[...grp.querySelectorAll('.stat[data-i]')]:[];
   rows.forEach(r=>r.classList.add('roll'));
+  document.querySelectorAll('#sheet .btn[data-act="reroll"]').forEach(b=>b.disabled=true);
   const pool=master?MPOOL:POOL[it.slot];
   const iv=setInterval(()=>{rows.forEach(r=>{const k=pick(pool);r.firstElementChild.textContent=BON[k].n;r.lastElementChild.innerHTML='+'+cm(r1(Math.random()*20+2))+'%';});},70);
   const res=()=>{clearInterval(iv);const nb=reroll(id,master);U.dirty=true;renderSheet();
-    if(nb){const g2=document.querySelector('#sheet [data-grp="'+(master?'m':'n')+'"]');if(g2)g2.querySelectorAll('.stat[data-i]').forEach(r=>r.classList.add('flash'));
-      if(nb.some(x=>isPerfect(x.b))){flashTile('gold');hook('toast','Perfekt bonus!');}}};
-  if(RM)res();else setTimeout(res,480);
+    if(nb){const g2=document.querySelector('#sheet [data-grp="'+(master?'m':'n')+'"]');const rr=g2?[...g2.querySelectorAll('.stat[data-i]')]:[];
+      let pf=0;rr.forEach((r,i)=>{r.style.animationDelay=(i*70)+'ms';r.classList.add('pop');if(nb[i]&&isPerfect(nb[i].b)){pf++;r.classList.add('perf');}});
+      const best=Math.max(...nb.map(x=>x.b));
+      if(pf){flashTile('gold');banner(pf>1?'PERFEKT ×'+pf+'!':'PERFEKT!','Bonus');vib([15,30,15,30,40]);}
+      else if(best>=3){flashTile('gold');hook('toast','Świetny bonus!');}
+      else flashTile('ok');}};
+  if(RM)res();else setTimeout(res,190);
 }
 
 /* ---------- zdarzenia ---------- */
@@ -592,6 +619,10 @@ function onClick(e){
     case 'actsel':S.actSel=id;nav('mapa');break;
     case 'chip':if(id==='hunt'){abandon();S.actSel='hunt';U.dirty=true;renderNav();renderContent();}else if(id==='boss'){openBossPick();}else{if(id==='mono')startMonolith();else startDungeon();U.dirty=true;renderNav();renderContent();}break;
     case 'bosspick':startBoss(id);closeSheet();U.dirty=true;renderNav();renderContent();break;
+    case 'lootT':U.sumOpen=!U.sumOpen;renderContent();break;
+    case 'lootReset':U.sum={sz:0,k:0,by:{},mat:{},t:Date.now()};renderContent();break;
+    case 'autobuy':if(buyAuto(id))hook('toast','Kupiono autouzywanie.');U.dirty=true;renderHud();renderSkillsBar();renderContent();break;
+    case 'autotog':toggleAuto(id);U.dirty=true;renderSkillsBar();renderContent();break;
     case 'item':openSheet(+id);break;
     case 'empty':hook('toast','Pusty slot: '+SLOTN[b.dataset.slot]+'. Kup element w Mieście, w zakładce Sklep.');nav('miasto','shop');break;
     case 'closesheet':closeSheet();break;
