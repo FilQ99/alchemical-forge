@@ -154,8 +154,14 @@ function vsMul(){const s=calcStats();return 1+(isBossEnc()?s.A.lboss:s.A.lpot)/1
 function xpNeed(L){return Math.round(CFG.xpBase*Math.pow(CFG.xpGrow,L-1));}
 function levelCap(){return S.unlockCap?CFG.designCap:CFG.levelCap;}
 function mobForLevel(){
-  const c=MAP1.mobs.filter(m=>S.level>=m.lv[0]&&S.level<=m.lv[1]);
-  return pick(c.length?c:[MAP1.mobs[MAP1.mobs.length-1]]);
+  // pula: pasujące do poziomu (waga 4) + sąsiednie (waga 1), żeby było widać różnych wrogów
+  const L=S.level,w=[];
+  MAP1.mobs.forEach(m=>{
+    const fit=L>=m.lv[0]&&L<=m.lv[1];
+    if(fit)for(let i=0;i<4;i++)w.push(m);
+    else if(m.lv[0]<=L+2&&m.lv[1]>=L-2)w.push(m);
+  });
+  return pick(w.length?w:[MAP1.mobs[MAP1.mobs.length-1]]);
 }
 function setEnc(e){E=e;E.spawnAt=Date.now()+CFG.spawnDelay*1000;hook('spawn');}
 function spawnMob(){
