@@ -86,7 +86,7 @@ h1,h2,h3{font-family:var(--fh);font-weight:700;margin:0;letter-spacing:.02em}
 .target .bar i{background:linear-gradient(#e0654f,#9a2b3b)}
 .target .hpt{font-size:11px;margin-top:2px;text-shadow:0 1px 0 #000}
 .target .tm{color:var(--gold2);font-size:12px;font-weight:700;text-shadow:0 1px 0 #000}
-.target.mini .bar i{background:linear-gradient(#e8b25a,#b3711b)}
+.target.isminiboss .bar i{background:linear-gradient(#e8b25a,#b3711b)}
 
 .skills{position:absolute;left:0;right:0;bottom:8px;z-index:8;display:flex;justify-content:center;gap:10px;pointer-events:none}
 .sk{pointer-events:auto;position:relative;width:54px;height:54px;border-radius:12px;border:2px solid var(--line2);background:#17110cdd;display:grid;place-items:center;overflow:hidden;padding:0}
