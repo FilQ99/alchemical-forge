@@ -8,7 +8,7 @@ const cm=v=>String(v).replace('.',',');
 const PCT=v=>'+'+cm(v)+'%';
 const bonLine=(k,v)=>BON[k].n+': '+PCT(v);
 const U={main:'walka',sub:{postac:'eq',miasto:'shop'},log:[],sheet:null,dirty:true,roll:null,lastSlow:0,lastAct:0};
-const SUB={postac:[['eq','Ekwipunek'],['guide','Poradnik'],['skills','Umiejętności'],['comp','Towarzysz']],miasto:[['shop','Sklep'],['kowal','Kowal']]};
+const SUB={postac:[['eq','Ekwipunek'],['guide','Poradnik'],['skills','Umiejętności'],['comp','Towarzysz']],miasto:[['shop','Sklep'],['kowal','Kowal'],['quests','Zadania']]};
 const NAVI=[
  ['walka','Walka','<path d="M5 19L18 6M14 6h4v4M6 15l3 3M3 21l3-3"/><path d="M19 19L6 6M6 10V6h4M18 15l-3 3M21 21l-3-3"/>'],
  ['postac','Postać','<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.5 3.5-7 8-7s8 2.5 8 7"/>'],
@@ -17,6 +17,7 @@ const NAVI=[
  ['mapa','Mapa','<path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>']
 ];
 const SVGID={boar:'dzik',wolf:'wilk',skel:'szkielet',wolfBig:'alfa',boarKing:'b1',skelGuard:'b2',witch:'b3',monolith:'mono',skelKing:'kw'};
+function eThumbD(d){const k=d.img||d.id,im=ASSETS.enemies[k];return im?'<img src="'+im+'" style="width:100%;height:100%;object-fit:contain;'+(d.fx?'filter:'+d.fx:'')+'" alt="">':eThumb(d.svg);}
 function eThumb(k){const id=SVGID[k];return ASSETS.enemies[id]?'<img src="'+ASSETS.enemies[id]+'" style="width:100%;height:100%;object-fit:contain" alt="">':eThumb(k);}
 function nav(main,sub){
   U.main=main;if(sub)U.sub[main]=sub;
@@ -24,9 +25,9 @@ function nav(main,sub){
   renderNav();renderTabs();renderContent();
   $('content').scrollTop=0;
 }
-function actDot(id){return (id==='boss'&&MAP1.bosses.some(b=>Date.now()>=(S.bossReady[b.id]||0)&&S.level>=b.lvRec-1))||(id==='mono'&&Date.now()>=S.monoReady)||(id==='dung'&&(S.mat.przepustka||0)>0);}
+function actDot(id){return (id==='boss'&&curMap().bosses.some(b=>Date.now()>=(S.bossReady[b.id]||0)&&S.level>=b.lvRec-1))||(id==='mono'&&Date.now()>=S.monoReady)||(id==='dung'&&(S.mat.przepustka||0)>0);}
 function renderNav(){
-  const dots={postac:S.pts>0,mapa:['mono','boss','dung'].some(actDot)};
+  const dots={postac:S.pts>0,mapa:['mono','boss','dung'].some(actDot),miasto:typeof Meta!=='undefined'&&Meta.claimable&&Meta.claimable()};
   $('nav').innerHTML=NAVI.map(n=>'<button class="nb '+(U.main===n[0]?'on':'')+'" data-act="nav" data-id="'+n[0]+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+n[2]+'</svg><span>'+n[1]+'</span>'+(dots[n[0]]?'<i class="dot"></i>':'')+(n[0]==='plecak'&&S.inv.length?'<em class="cnt">'+S.inv.length+'</em>':'')+'</button>').join('');
 }
 
@@ -70,8 +71,8 @@ function renderEnemy(){
   const wantBg=E.type==='dung'?ASSETS.bgDung:ASSETS.bg,bgEl=$('bg');
   if(bgEl.dataset.src!==(E.type==='dung'?'d':'m')){bgEl.dataset.src=E.type==='dung'?'d':'m';bgEl.src=wantBg;}
   sizeEnemy();
-  const img=ASSETS.enemies[d.id];
-  $('enemyin').innerHTML=img?'<img src="'+img+'" style="width:100%;height:100%;object-fit:contain" alt="">':enemySvg(d.svg);
+  const img=ASSETS.enemies[d.img||d.id];
+  $('enemyin').innerHTML=img?'<img src="'+img+'" style="width:100%;height:100%;object-fit:contain;'+(d.fx?'filter:'+d.fx:'')+'" alt="">':enemySvg(d.svg);
   el.classList.toggle('ph',!img&&false);
   const key=E.type+':'+d.id+':'+(E.stage||'');
   if(U.lastKey!==key){U.lastKey=key;
@@ -97,7 +98,7 @@ function renderTarget(){
   t.classList.toggle('isminiboss',E.type==='mini');
   const k=kindName();
   let nm=E.def.n;
-  if(E.type==='dung'){const st=MAP1.dungeon.stages[E.stage];nm=E.def.n+(st.kind==='horde'?' ('+E.left+'/'+st.count+')':'');}
+  if(E.type==='dung'){const st=curMap().dungeon.stages[E.stage];nm=E.def.n+(st.kind==='horde'?' ('+E.left+'/'+st.count+')':'');}
   t.querySelector('.nm').innerHTML=esc(nm)+(k?' <small>'+k+'</small>':'');
   const mn=$('mininame');if(mn)mn.textContent=nm+(k?' · '+k:'');
   frameTarget();
@@ -326,32 +327,32 @@ function panelAct(){
   const cur=E?E.type:'mob';
   const inSpecial=cur==='mono'||cur==='boss'||cur==='dung';
   if(sel==='hunt'){
-    h+='<div class="sec"><h3>Polowanie <small>Wrzosowe Pogranicze</small></h3>';
+    h+='<div class="sec"><h3>Polowanie <small>'+esc(curMap().name)+'</small></h3>';
     h+='<div class="card"><p class="muted" style="margin:0 0 8px">Stały strumień potworów: bezpieczny zarobek bez ograniczeń czasu. Działa też, gdy nie klikasz, w tempie Twojej broni.</p>';
     h+='<div class="stat"><span>Do mini-bossa</span><b class="num">'+(S.kills%CFG.minibossEvery)+' / '+CFG.minibossEvery+'</b></div>';
     h+='<div class="stat"><span>Drop</span><b>Szardy, doświadczenie, rzadko Kamień ulepszenia</b></div></div>';
     if(inSpecial)h+='<div class="btns" style="margin-top:10px"><button class="btn" data-act="hunt">Wróć do polowania</button></div>';
     h+='</div><div class="sec"><h3>Potwory</h3>';
-    MAP1.mobs.forEach(m=>{h+='<div class="act-card"><div style="width:64px;height:48px">'+eThumb(m.svg)+'</div><div class="grow"><b>'+esc(m.n)+'</b><small>poziomy '+m.lv[0]+'–'+m.lv[1]+' · '+fmt(m.hp)+' życia · +'+m.sz+' Szardów</small></div></div>';});
-    h+='<div class="act-card"><div style="width:64px;height:48px">'+eThumb('wolfBig')+'</div><div class="grow"><b>'+esc(MAP1.mini.n)+'</b><small>Mini-boss co '+CFG.minibossEvery+' potworów · '+dropsTxt(MAP1.mini.drops)+'</small></div></div></div>';
+    curMap().mobs.forEach(m=>{h+='<div class="act-card"><div style="width:64px;height:48px">'+eThumbD(m)+'</div><div class="grow"><b>'+esc(m.n)+'</b><small>poziomy '+m.lv[0]+'–'+m.lv[1]+' · '+fmt(m.hp)+' życia · +'+m.sz+' Szardów</small></div></div>';});
+    h+='<div class="act-card"><div style="width:64px;height:48px">'+eThumbD(curMap().mini)+'</div><div class="grow"><b>'+esc(curMap().mini.n)+'</b><small>Mini-boss co '+CFG.minibossEvery+' potworów · '+dropsTxt(curMap().mini.drops)+'</small></div></div></div>';
   }else if(sel==='mono'){
-    const d=MAP1.monolith,hp=Math.ceil(representativeHp()*d.hpMul),rdy=Math.max(0,Math.ceil((S.monoReady-now)/1000));
+    const d=curMap().monolith,hp=Math.ceil(representativeHp()*d.hpMul),rdy=Math.max(0,Math.ceil((S.monoReady-now)/1000));
     h+='<div class="sec"><h3>Monolit <small>'+recText(d.lvRec)+'</small></h3><div class="card">';
-    h+='<div class="row2" style="align-items:flex-start"><div style="width:70px;height:96px">'+eThumb('monolith')+'</div><div style="flex:1;margin-left:10px"><b style="font-family:var(--fh)">'+esc(d.n)+'</b><p class="muted" style="margin:4px 0 0">Kamienny słup z runami. Duży cel, szybszy zarobek i główne źródło Kamieni ulepszenia, Odłamków i Przepustek do dungeonu.</p></div></div>';
+    h+='<div class="row2" style="align-items:flex-start"><div style="width:70px;height:96px">'+eThumbD(curMap().monolith)+'</div><div style="flex:1;margin-left:10px"><b style="font-family:var(--fh)">'+esc(d.n)+'</b><p class="muted" style="margin:4px 0 0">Kamienny słup z runami. Duży cel, szybszy zarobek i główne źródło Kamieni ulepszenia, Odłamków i Przepustek do dungeonu.</p></div></div>';
     h+='<div class="sep"></div><div class="stat"><span>Życie</span><b class="num">'+fmt(hp)+'</b></div><div class="stat"><span>Szacowany czas</span><b class="num">~'+ttk(hp)+' s</b></div><div class="stat"><span>Nagrody</span><b style="text-align:right">'+dropsTxt(d.drops)+', Szardy ×'+d.sz+'</b></div><div class="stat"><span>Przepustka do dungeonu</span><b>'+Math.round(d.przepustka*100)+'%</b></div>';
     h+='<div class="btns" style="margin-top:10px"><button class="btn" data-act="mono" '+(rdy>0||cur==='mono'?'disabled':'')+'>'+(cur==='mono'?'Monolit trwa':rdy>0?'Odnawia się '+rdy+' s':'Przywołaj Monolit')+'</button>'+(cur==='mono'?'<button class="btn ghost" data-act="hunt">Porzuć</button>':'')+'</div></div></div>';
   }else if(sel==='boss'){
     h+='<div class="sec"><h3>Bossowie mapy <small>limit czasu '+CFG.bossTime+' s · odrodzenie '+Math.round(CFG.bossRespawn/60)+' min</small></h3>';
-    MAP1.bosses.forEach(b=>{
+    curMap().bosses.forEach(b=>{
       const rdy=Math.max(0,Math.ceil(((S.bossReady[b.id]||0)-now)/1000));
       const fighting=cur==='boss'&&E.def.id===b.id;
-      h+='<div class="card" style="margin-bottom:8px"><div class="row2" style="align-items:flex-start"><div style="width:64px;height:84px;flex:none">'+eThumb(b.svg)+'</div><div style="flex:1;margin-left:10px"><b style="font-family:var(--fh)">'+esc(b.n)+'</b> '+recText(b.lvRec)+'<small class="muted" style="display:block">'+esc(b.desc)+'</small>'+
+      h+='<div class="card" style="margin-bottom:8px"><div class="row2" style="align-items:flex-start"><div style="width:64px;height:84px;flex:none">'+eThumbD(b)+'</div><div style="flex:1;margin-left:10px"><b style="font-family:var(--fh)">'+esc(b.n)+'</b> '+recText(b.lvRec)+'<small class="muted" style="display:block">'+esc(b.desc)+'</small>'+
         '<div class="stat"><span>Życie</span><b class="num">'+fmt(b.hp)+'</b></div><div class="stat"><span>Łup</span><b style="text-align:right;font-size:12px">'+dropsTxt(b.drops)+', Perła '+Math.round(b.perla*100)+'%'+(b.przepustka?', Przepustka '+Math.round(b.przepustka*100)+'%':'')+'</b></div></div></div>'+
         '<div class="btns" style="margin-top:8px"><button class="btn" data-act="boss" data-id="'+b.id+'" '+(rdy>0||fighting?'disabled':'')+'>'+(fighting?'Walka trwa':rdy>0?'Odradza się '+Math.floor(rdy/60)+':'+String(rdy%60).padStart(2,'0'):'Walcz')+'</button>'+(fighting?'<button class="btn ghost" data-act="hunt">Porzuć</button>':'')+'</div></div>';
     });
     h+='<p class="hint">Bossowie dają Perły i Znaki, czyli materiały na Kamień przemiany.</p></div>';
   }else{
-    const D=MAP1.dungeon,pass=S.mat.przepustka||0;
+    const D=curMap().dungeon,pass=S.mat.przepustka||0;
     h+='<div class="sec"><h3>'+esc(D.n)+' <small>'+recText(D.lvRec)+'</small></h3><div class="card">';
     h+='<p class="muted" style="margin:0 0 8px">Pradawny kurhan na granicy. Trzy etapy w limicie '+Math.round(CFG.dungeonTime/60)+' minut. Wejście kosztuje 1 Przepustkę (zużywana), wejść możesz tyle, ile masz Przepustek.</p>';
     D.stages.forEach((st,i)=>{h+='<div class="stat"><span>Etap '+(i+1)+': '+esc(st.n)+'</span><b class="num">'+(st.kind==='horde'?st.count+' potworów':fmt(st.hp)+' życia')+'</b></div>';});
@@ -380,11 +381,12 @@ function panelWalka(){
     let st='';
     if(id==='hunt')st='Potwory';
     else if(id==='mono'){const r=Math.ceil((S.monoReady-now)/1000);st=on?'trwa':r>0?'za '+r+' s':'gotowy';}
-    else if(id==='boss'){const k=MAP1.bosses.filter(b=>now>=(S.bossReady[b.id]||0)).length;st=on?'trwa':k+' / '+MAP1.bosses.length+' gotowych';}
+    else if(id==='boss'){const k=curMap().bosses.filter(b=>now>=(S.bossReady[b.id]||0)).length;st=on?'trwa':k+' / '+curMap().bosses.length+' gotowych';}
     else st='Przepustki: '+(S.mat.przepustka||0);
     h+='<button class="chip2 '+(on?'on':'')+'" data-act="chip" data-id="'+id+'"><b>'+n+'</b><small>'+st+'</small>'+(id!=='hunt'&&actDot(id)&&!on?'<i class="dot"></i>':'')+'</button>';
   });
   h+='</div></div>';
+  h+=goalsHtml();
   h+='<div class="sec"><div class="card"><div class="stat"><span>Cios (klik)</span><b class="num">'+fmt(clickDmg())+'</b></div><div class="stat"><span>Cios samoczynny</span><b class="num">'+fmt(autoDmg())+' co '+cm(r1(autoInterval()))+' s</b></div><div class="stat"><span>Do mini-bossa</span><b class="num">'+(S.kills%CFG.minibossEvery)+' / '+CFG.minibossEvery+'</b></div></div></div>';
   h+=lootHtml();
   return h;
@@ -407,12 +409,16 @@ function lootHtml(){
 }
 function panelMapa(){
   let h='<div class="sec"><h3>Teleportacja</h3><div class="maps">';
-  h+='<div class="mapcard here"><img src="'+ASSETS.bg+'" alt=""><div class="mc"><b>'+esc(MAP1.name)+'</b><small>Mapa 1 · poziomy '+MAP1.levels+'</small></div><span class="pill ok">Tu jesteś</span></div>';
-  h+='<div class="mapcard lockd"><div class="mc"><b>Mapa 2</b><small>Wkrótce</small></div><span class="lk">🔒</span></div>';
+  MAPS.forEach((mp,k)=>{
+    const n=k+1,here=(S.map||1)===n,lock=n===2&&!S.unlock2;
+    h+='<div class="mapcard '+(here?'here':'')+(lock?' lockd':'')+'">'+(lock?'':'<img src="'+ASSETS.bg+'" alt="" style="'+(n===2?'filter:hue-rotate(-60deg) saturate(.75) brightness(.85)':'')+'">')+'<div class="mc"><b>'+esc(mp.name)+'</b><small>Mapa '+n+' · poziomy '+mp.levels+(lock?' · pokonaj Wiedźmę Wrzosowisk':'')+'</small></div>'+(lock?'<span class="lk">🔒</span>':here?'<span class="pill ok">Tu jesteś</span>':'<button class="btn" data-act="gomap" data-id="'+n+'">Teleport</button>')+'</div>';
+  });
   h+='<div class="mapcard lockd"><div class="mc"><b>Mapa 3</b><small>Wkrótce</small></div><span class="lk">🔒</span></div>';
+  h+='</div><div class="sec"><h3>Poziom trudności <small>więcej życia wrogów, lepsze łupy</small></h3><div class="chips difs">';
+  CFG.diff.forEach((d,i)=>{const lk=i>(S.difMax[S.map||1]||0);h+='<button class="chip2 '+((S.dif||0)===i?'on':'')+(lk?' lk':'')+'" data-act="dif" data-id="'+i+'"><b>'+d.n+'</b><small>'+(lk?'🔒 zablokowany':'×'+d.rw+' łupów')+'</small></button>';});
   h+='</div></div><div class="sec"><h3>Aktywności</h3><div class="tiles">';
   const now=Date.now(),cur=E?E.type:'mob';
-  const defs=[['hunt','Polowanie','dzik',(cur==='mob'||cur==='mini')?'trwa':'Potwory'],['mono','Monolit','mono',cur==='mono'?'trwa':(S.monoReady>now?'za '+Math.ceil((S.monoReady-now)/1000)+' s':'gotowy')],['boss','Boss','b1',cur==='boss'?'trwa':MAP1.bosses.filter(b=>now>=(S.bossReady[b.id]||0)).length+' / 3 gotowych'],['dung','Dungeon','kw','Przepustki: '+(S.mat.przepustka||0)]];
+  const defs=[['hunt','Polowanie','dzik',(cur==='mob'||cur==='mini')?'trwa':'Potwory'],['mono','Monolit','mono',cur==='mono'?'trwa':(S.monoReady>now?'za '+Math.ceil((S.monoReady-now)/1000)+' s':'gotowy')],['boss','Boss','b1',cur==='boss'?'trwa':curMap().bosses.filter(b=>now>=(S.bossReady[b.id]||0)).length+' / 3 gotowych'],['dung','Dungeon','kw','Przepustki: '+(S.mat.przepustka||0)]];
   defs.forEach(([id,n,img,st])=>{
     h+='<button class="tile2 '+(S.actSel===id?'on':'')+'" data-act="actsel" data-id="'+id+'">'+(ASSETS.enemies[img]?'<img src="'+ASSETS.enemies[img]+'" alt="">':'')+'<b>'+n+'</b><small>'+st+'</small>'+(id!=='hunt'&&actDot(id)?'<i class="dot"></i>':'')+'</button>';
   });
@@ -496,7 +502,7 @@ function panelMats(){
 function renderContent(){
   const c=$('content');const st=c.scrollTop;
   const m=U.main,sb=U.sub[m];
-  const fn=m==='walka'?panelWalka:m==='plecak'?panelBag:m==='mapa'?panelMapa:m==='postac'?{eq:panelEq,guide:panelGuide,skills:panelSkills,comp:panelComp}[sb]:{shop:panelShop,kowal:panelKowal}[sb];
+  const fn=m==='walka'?panelWalka:m==='plecak'?panelBag:m==='mapa'?panelMapa:m==='postac'?{eq:panelEq,guide:panelGuide,skills:panelSkills,comp:panelComp}[sb]:{shop:panelShop,kowal:panelKowal,quests:panelQuests}[sb];
   c.innerHTML=fn();c.scrollTop=st;U.dirty=false;
 }
 
@@ -570,9 +576,9 @@ function openBossPick(){U.sheet='boss';renderSheet();$('veil').classList.add('on
 function bossPickHtml(){
   const now=Date.now(),cur=E?E.type:'mob';
   let h='<button class="x btn ghost" data-act="closesheet">✕</button><div class="nm" style="margin-bottom:10px">Wybierz bossa</div>';
-  MAP1.bosses.forEach(b=>{
+  curMap().bosses.forEach(b=>{
     const rdy=Math.max(0,Math.ceil(((S.bossReady[b.id]||0)-now)/1000)),fg=cur==='boss'&&E.def.id===b.id;
-    h+='<div class="card" style="margin-bottom:8px"><div class="row2" style="align-items:center;gap:10px"><div style="width:56px;height:70px;flex:none">'+eThumb(b.svg)+'</div><div style="flex:1;min-width:0"><b style="font-family:var(--fh)">'+esc(b.n)+'</b><small class="muted" style="display:block">'+recText(b.lvRec)+' · '+fmt(b.hp)+' życia</small></div></div>'+
+    h+='<div class="card" style="margin-bottom:8px"><div class="row2" style="align-items:center;gap:10px"><div style="width:56px;height:70px;flex:none">'+eThumbD(b)+'</div><div style="flex:1;min-width:0"><b style="font-family:var(--fh)">'+esc(b.n)+'</b><small class="muted" style="display:block">'+recText(b.lvRec)+' · '+fmt(b.hp)+' życia</small></div></div>'+
     '<div class="btns" style="margin-top:8px"><button class="btn" data-act="bosspick" data-id="'+b.id+'" '+(rdy>0||fg?'disabled':'')+'>'+(fg?'Walka trwa':rdy>0?'Odradza się '+Math.floor(rdy/60)+':'+String(rdy%60).padStart(2,'0'):'Walcz')+'</button></div></div>';
   });
   return h;
@@ -696,9 +702,10 @@ function init(){
   document.body.addEventListener('click',onClick);
   $('veil').addEventListener('click',e=>{if(e.target.id==='veil')closeSheet();});
   document.body.addEventListener('input',e=>{if(e.target.dataset&&e.target.dataset.act==='share'){setShare(+e.target.value);const sv=$('sharev');if(sv)sv.textContent=S.comp.share+'%';const h=e.target.parentNode.querySelector('.hint');if(h)h.textContent='Z każdego zdobytego XP '+S.comp.share+'% idzie do towarzysza, a reszta do bohatera. Przy 0% towarzysz zostaje na swoim poziomie, bez kary.';}});
-  $('devbtn').addEventListener('click',()=>{const d=$('dev');d.classList.toggle('on');d.innerHTML=devHtml();});
+  $('devbtn').addEventListener('click',()=>Meta.open('settings'));
   $('app').dataset.tab='walka';
   fullRender();
+  Meta.start();
   setInterval(save,5000);
   requestAnimationFrame(loop);
 }

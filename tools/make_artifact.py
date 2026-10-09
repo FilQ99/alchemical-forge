@@ -4,7 +4,7 @@ R=os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','public')
 rd=lambda p:open(os.path.join(R,p),encoding='utf-8').read()
 t=rd('index.html')
 css=rd('style.css')
-js=''.join(rd('js/'+f)+'\n' for f in ['data.js','art.js','engine.js','ui.js'])
+js=''.join(rd('js/'+f)+'\n' for f in ['data.js','art.js','engine.js','ui.js','meta.js'])
 def uri(m):
     p=m.group(1)
     return '"data:image/webp;base64,'+base64.b64encode(open(os.path.join(R,p),'rb').read()).decode()+'"'

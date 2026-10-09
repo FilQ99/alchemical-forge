@@ -9,6 +9,10 @@ const CFG={
   levelCap:8,                // limit poziomu w MVP (treść mapy 1); docelowo 50
   designCap:50,
   minibossEvery:50,          // co ile zabitych potworów pojawia się mini-boss
+  diff:[{n:'Normalny',hp:1,rw:1,luck:1},{n:'Trudny',hp:3,rw:2,luck:1.3},{n:'Koszmarny',hp:8,rw:4,luck:1.7}],
+  offlineEff:.5, offlineMaxH:2, offlineMinS:120,   // nagroda za nieobecność
+  weakEvery:[4,7], weakLife:1.9, weakMul:4,        // złote słabe punkty
+  map2Cap:16,
   monolithCd:60,             // s, odnowienie Monolitu
   bossRespawn:300,           // s, odnowienie bossa
   bossTime:60,               // s, limit czasu walki z bossem
@@ -198,6 +202,48 @@ const MAP1={
     drops:{kamien:[3,5],rdzen:[1,1],perla:[1,2],znak:[1,2],zmieniacz:[2,4],dodatek:[2,3]}
   }
 };
+
+// Mapa 2: Mglista Dolina (grafiki tymczasowo z mapy 1, przefarbowane filtrem 'fx')
+const FXA='hue-rotate(205deg) saturate(1.15)',FXB='hue-rotate(95deg) saturate(1.25) brightness(.95)',FXC='hue-rotate(300deg) saturate(1.3)',FXD='hue-rotate(160deg) saturate(1.2) brightness(1.05)';
+const MAP2={
+  name:'Mglista Dolina',tier:2,levels:'8–16',
+  mobs:[
+    {id:'m2dzik',img:'dzik',fx:FXA,n:'Dzik mgielny',lv:[8,10],hp:450,xp:70,sz:28,h:28,w:1.674,svg:'boar'},
+    {id:'m2wilk',img:'wilk',fx:FXC,n:'Wilk cienia',lv:[9,13],hp:1400,xp:150,sz:60,h:28,w:2.123,svg:'wolf'},
+    {id:'m2szk',img:'szkielet',fx:FXD,n:'Upiór doliny',lv:[12,16],hp:3600,xp:320,sz:120,h:50,w:.583,svg:'skel'}
+  ],
+  mini:{id:'m2alfa',img:'alfa',fx:FXC,n:'Cień Przywódcy',hp:24000,xp:800,sz:700,h:34,w:1.784,svg:'wolfBig',drops:{kamien:[2,3],znak:[1,2],zmieniacz:[2,3],dodatek:[1,1]},perla:.15},
+  bosses:[
+    {id:'m2b1',img:'b1',fx:FXB,n:'Klątwowy Odyniec',hp:160000,xp:1400,sz:5500,h:44,w:1.614,svg:'boarKing',lvRec:11,drops:{znak:[2,3],zmieniacz:[2,3],dodatek:[1,2]},perla:.2,desc:'Dzik owładnięty mgłą doliny'},
+    {id:'m2b2',img:'b2',fx:FXA,n:'Wartownik Mgły',hp:280000,xp:2000,sz:8200,h:60,w:1.355,svg:'skelGuard',lvRec:13,drops:{znak:[1,2],zmieniacz:[2,3],dodatek:[1,2]},perla:.3,desc:'Zimny strażnik z zardzewiałą tarczą'},
+    {id:'m2b3',img:'b3',fx:FXC,n:'Pani Mgieł',hp:420000,xp:3000,sz:12000,h:58,w:.979,svg:'witch',lvRec:15,drops:{znak:[1,1],zmieniacz:[2,4],dodatek:[1,3]},perla:.45,przepustka:.12,desc:'Władczyni doliny, szepcze z mgły',last:true}
+  ],
+  monolith:{id:'m2mono',img:'mono',fx:FXA,n:'Monolit Mgieł',hpMul:15,sz:1500,xp:500,h:62,w:.566,svg:'monolith',drops:{kamien:[3,6],odlamek:[3,5],zmieniacz:[2,3],dodatek:[1,1]},przepustka:.3,perla:.05,lvRec:10},
+  dungeon:{
+    n:'Krypta Mgieł',lvRec:14,
+    stages:[
+      {kind:'horde',n:'Hordy upiorów',count:10},
+      {id:'ds1',img:'b2',fx:FXA,kind:'mini',n:'Strażnik krypty',hp:60000,xp:900,sz:3000,h:56,w:1.355,svg:'skelGuard'},
+      {id:'ds2',img:'kw',fx:FXC,kind:'boss',n:'Wicekról Mgieł',hp:360000,xp:4000,sz:20000,h:66,w:1.15,svg:'skelKing'}
+    ],
+    drops:{kamien:[4,7],rdzen:[1,2],perla:[1,3],znak:[1,2],zmieniacz:[3,5],dodatek:[2,4]}
+  }
+};
+MAP1.bosses[2].last=true;
+const MAPS=[MAP1,MAP2];
+const curMap=()=>MAPS[((typeof S!=='undefined'&&S&&S.map)||1)-1]||MAP1;
+
+// Zadania dzienne i seria dni
+const QPOOL=[
+  {id:'kills',t:'Pokonaj potwory',goal:[80,150],rew:{kamien:3}},
+  {id:'boss',t:'Pokonaj bossa',goal:[1,1],rew:{dodatek:2}},
+  {id:'mono',t:'Rozbij Monolit',goal:[1,1],rew:{zmieniacz:2}},
+  {id:'skill',t:'Użyj umiejętności',goal:[10,20],rew:{kamien:2,zmieniacz:1}},
+  {id:'crit',t:'Zadaj trafienia krytyczne',goal:[30,60],rew:{zmieniacz:1,dodatek:1}},
+  {id:'weak',t:'Trafij złote słabe punkty',goal:[8,15],rew:{kamien:3}}
+];
+const STREAK=[{kamien:2},{zmieniacz:1},{kamien:3,dodatek:1},{zmieniacz:2},{przepustka:1},{dodatek:2,kamien:3},{perla:1,zmieniacz:2,dodatek:1}];
+const RARE=['perla','rdzen','przepustka','przemiany','dodatekM','zmieniaczM'];
 
 // Cele ekwipunku: co jest „super” zależnie od tego, jak chcesz grać
 const GOALS={

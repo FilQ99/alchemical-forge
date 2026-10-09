@@ -25,7 +25,8 @@ function newState(){
     items:{},inv:[],eq:{},nid:1,
     comp:{lvl:1,xp:0,share:25},
     kills:0,cd:{},monoReady:0,bossReady:{b1:0,b2:0,b3:0},buffEnd:{},
-    auto:{},actSel:'hunt',unlockCap:false,mute:true};
+    auto:{},actSel:'hunt',unlockCap:false,mute:true,
+    map:1,unlock2:false,dif:0,difMax:{1:0,2:0},last:0,daily:null,streak:{n:0,last:'',claimed:true},tut:0,sfx:true,vibOn:true};
 }
 let S=newState();
 let E=null;                // aktualne starcie
@@ -152,34 +153,35 @@ function vsMul(){const s=calcStats();return 1+(isBossEnc()?s.A.lboss:s.A.lpot)/1
 
 /* ---------- walka ---------- */
 function xpNeed(L){return Math.round(CFG.xpBase*Math.pow(CFG.xpGrow,L-1));}
-function levelCap(){return S.unlockCap?CFG.designCap:CFG.levelCap;}
+function levelCap(){return S.unlockCap?CFG.designCap:(S.unlock2?CFG.map2Cap:CFG.levelCap);}
 function mobForLevel(){
   // pula: pasujące do poziomu (waga 4) + sąsiednie (waga 1), żeby było widać różnych wrogów
   const L=S.level,w=[];
-  MAP1.mobs.forEach(m=>{
+  curMap().mobs.forEach(m=>{
     const fit=L>=m.lv[0]&&L<=m.lv[1];
     if(fit)for(let i=0;i<4;i++)w.push(m);
     else if(m.lv[0]<=L+2&&m.lv[1]>=L-2)w.push(m);
   });
-  return pick(w.length?w:[MAP1.mobs[MAP1.mobs.length-1]]);
+  return pick(w.length?w:[curMap().mobs[curMap().mobs.length-1]]);
 }
-function setEnc(e){E=e;E.spawnAt=Date.now()+CFG.spawnDelay*1000;hook('spawn');}
+function diffMul(){return CFG.diff[Math.min(S.dif||0,CFG.diff.length-1)];}
+function setEnc(e){const dm=diffMul();e.dm=dm;if(dm.hp!==1){e.max=Math.round(e.max*dm.hp);e.hp=e.max;}E=e;E.spawnAt=Date.now()+CFG.spawnDelay*1000;hook('spawn');}
 function spawnMob(){
   const d=mobForLevel();
   setEnc({type:'mob',def:d,hp:d.hp,max:d.hp});
 }
-function spawnMini(){const d=MAP1.mini;setEnc({type:'mini',def:d,hp:d.hp,max:d.hp});hook('toast','Pojawił się mini-boss: '+d.n+'!');}
+function spawnMini(){const d=curMap().mini;setEnc({type:'mini',def:d,hp:d.hp,max:d.hp});hook('toast','Pojawił się mini-boss: '+d.n+'!');}
 function representativeHp(){return mobForLevel().hp;}
 function startMonolith(){
   const now=Date.now();
   if(now<S.monoReady){hook('toast','Monolit się odnawia.');return;}
-  if(S.level<MAP1.monolith.lvRec-1&&!S.unlockCap&&S.level<2){}
-  const d=MAP1.monolith;const hp=Math.ceil(representativeHp()*d.hpMul);
+  if(S.level<curMap().monolith.lvRec-1&&!S.unlockCap&&S.level<2){}
+  const d=curMap().monolith;const hp=Math.ceil(representativeHp()*d.hpMul);
   S.monoReady=now+CFG.monolithCd*1000;
   setEnc({type:'mono',def:d,hp,max:hp});save();
 }
 function startBoss(id){
-  const d=MAP1.bosses.find(b=>b.id===id);if(!d)return;
+  const d=curMap().bosses.find(b=>b.id===id);if(!d)return;
   if(Date.now()<(S.bossReady[id]||0)){hook('toast',d.n+' jeszcze się nie odrodził.');return;}
   setEnc({type:'boss',def:d,hp:d.hp,max:d.hp,timeLeft:CFG.bossTime});
 }
@@ -189,9 +191,9 @@ function startDungeon(){
   enterDungeonStage(0,CFG.dungeonTime);save();
 }
 function enterDungeonStage(i,tl){
-  const st=MAP1.dungeon.stages[i];
+  const st=curMap().dungeon.stages[i];
   if(st.kind==='horde'){
-    const d=MAP1.mobs[2];
+    const d=curMap().mobs[2];
     setEnc({type:'dung',def:d,hp:d.hp,max:d.hp,stage:i,left:st.count,timeLeft:tl,isBoss:false});
   }else{
     setEnc({type:'dung',def:st,hp:st.hp,max:st.hp,stage:i,left:1,timeLeft:tl,isBoss:st.kind==='boss'});
@@ -244,11 +246,11 @@ function dropRoll(table,luck){
 }
 function kill(){
   const e=E,d=e.def,s=calcStats();
-  const luck=1+s.szczescie/100;
+  const dm=e.dm||CFG.diff[0],luck=(1+s.szczescie/100)*dm.luck,cm2=1+(dm.rw-1)*.4;
   const drops=[];
-  let sz=d.sz*(1+s.A.chciwosc/100),xp=d.xp*(1+s.A.madrosc/100);
+  let sz=d.sz*(1+s.A.chciwosc/100)*dm.rw,xp=d.xp*(1+s.A.madrosc/100)*dm.rw;
   const chance=(p)=>Math.random()<p*luck;
-  const give=(k,n)=>{if(n>0){addMat(k,n);drops.push({k,n});}};
+  const give=(k,n)=>{n=Math.round(n*cm2);if(n>0){addMat(k,n);drops.push({k,n});}};
   let next='mob';
   if(e.type==='mob'){
     for(const k in CFG.mobDrops)if(chance(CFG.mobDrops[k]))give(k,1);
@@ -266,21 +268,25 @@ function kill(){
     if(chance(d.perla))give('perla',1);
     if(d.przepustka&&chance(d.przepustka))give('przepustka',1);
     S.bossReady[d.id]=Date.now()+CFG.bossRespawn*1000;
+    if(d.last){
+      if(S.map===1&&!S.unlock2){S.unlock2=true;hook('mapUnlock');}
+      if((S.dif||0)===(S.difMax[S.map]||0)&&S.dif<CFG.diff.length-1){S.difMax[S.map]=S.dif+1;hook('toast','Odblokowano poziom trudności: '+CFG.diff[S.dif+1].n+'!');}
+    }
   }else if(e.type==='dung'){
     sz=d.sz?sz:sz;
-    const st=MAP1.dungeon.stages[e.stage];
+    const st=curMap().dungeon.stages[e.stage];
     e.left--;
     if(e.left>0){
       // kolejny szkielet w hordzie
       S.szardy+=Math.floor(sz);gainXp(xp);hook('kill',d,Math.floor(sz),[]);
       e.hp=e.max;hook('spawn');return;
     }
-    if(e.stage<MAP1.dungeon.stages.length-1){
+    if(e.stage<curMap().dungeon.stages.length-1){
       S.szardy+=Math.floor(sz);gainXp(xp);hook('kill',d,Math.floor(sz),[]);
       enterDungeonStage(e.stage+1,e.timeLeft);return;
     }
     // koniec dungeonu
-    const dr=MAP1.dungeon.drops;
+    const dr=curMap().dungeon.drops;
     for(const k in dr)give(k,rnd(dr[k][0],dr[k][1]));
     sz+=800;
   }
@@ -443,11 +449,11 @@ function rankUp(id){
 function setShare(v){S.comp.share=clamp(Math.round(v),0,50);save();}
 
 /* ---------- zapis ---------- */
-function save(){try{localStorage.setItem(LSKEY,JSON.stringify(S));}catch(e){}}
+function save(){S.last=Date.now();try{localStorage.setItem(LSKEY,JSON.stringify(S));}catch(e){}}
 function load(){
   try{
     const r=localStorage.getItem(LSKEY);
-    if(r){const p=JSON.parse(r);const b=newState();S=Object.assign(b,p);S.mat=Object.assign(b.mat,p.mat||{});S.comp=Object.assign(b.comp,p.comp||{});S.bossReady=Object.assign(b.bossReady,p.bossReady||{});}
+    if(r){const p=JSON.parse(r);const b=newState();S=Object.assign(b,p);S.mat=Object.assign(b.mat,p.mat||{});S.comp=Object.assign(b.comp,p.comp||{});S.bossReady=Object.assign(b.bossReady,p.bossReady||{});S.difMax=Object.assign(b.difMax,p.difMax||{});S.streak=Object.assign(b.streak,p.streak||{});}
   }catch(e){}
   dirty();
 }
